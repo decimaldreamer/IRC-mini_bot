@@ -15,6 +15,7 @@ typedef struct
 	int Protocol;
 	BOOL Connected;
 	BOOL Listening;
+	BOOL HasCommand;
 	TIMEVAL	*Timeval;
 } SOCK_INFO;
 

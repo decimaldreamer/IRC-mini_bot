@@ -26,7 +26,7 @@ BOOL ConnectToIRC(IRC_INFO *IRC, char *Server, char *Port)
 		if (!ReceiveSockData(&IRC->Sock))
 			break;
 
-		if (!ParseIRC(IRC))
+		if (IRC->Sock.HasCommand && !ParseIRC(IRC))
 			break;
 		
 	} while (&IRC->Sock.Connected);
