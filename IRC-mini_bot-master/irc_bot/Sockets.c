@@ -157,6 +157,7 @@ BOOL ReceiveSockData(SOCK_INFO *Sock)
 	fd_set fds;
 	int Status;
 
+	Sock->HasCommand = FALSE;
 	FD_ZERO(&fds);
 	FD_SET(Sock->Socket, &fds);
 
@@ -170,30 +171,38 @@ BOOL ReceiveSockData(SOCK_INFO *Sock)
 		return FALSE;
 	}
 
-	Status = recv(Sock->Socket, Sock->Data.Buffer, sizeof(Sock->Data.Buffer), 0);
-	if (Status == 0)
+	if (FD_ISSET(Sock->Socket, &fds))
 	{
+		Status = recv(Sock->Socket, Sock->Data.Buffer,
+			      sizeof(Sock->Data.Buffer), 0);
+		if (Status == 0)
+		{
 #ifdef _DEBUG
-		printf("ReceiveSockData: connection closed\n");
+			printf("ReceiveSockData: connection closed\n");
 #endif
-		DestroySock(Sock);
-		return FALSE;
+			DestroySock(Sock);
+			return FALSE;
+		}
+		else if (Status < 0)
+		{
+#ifdef _DEBUG
+			printf("[ERROR] ReceiveSockData: %d\n",
+			       WSAGetLastError());
+#endif
+			DestroySock(Sock);
+			return FALSE;
+		}
+
+		Sock->HasCommand = TRUE;
+
+		Sock->Data.Buffer[Status] = '\0';
+
+#ifdef _DEBUG
+		printf("\nReceived %d bytes of data: \n%s\n",
+		       Status, Sock->Data.Buffer);
+#endif
+
 	}
-	else if (Status < 0)
-	{
-#ifdef _DEBUG
-		printf("[ERROR] ReceiveSockData: %d\n", WSAGetLastError());
-#endif
-		DestroySock(Sock);
-		return FALSE;
-	}
-
-	Sock->Data.Buffer[Status] = '\0';
-
-#ifdef _DEBUG
-	printf("\nReceived %d bytes of data: \n%s\n", Status, Sock->Data.Buffer);
-#endif
-
 	return TRUE;
 }
 
